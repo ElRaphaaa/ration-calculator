@@ -28,3 +28,11 @@ K1_OPTIONS = {
     "Labrador / Golden": 0.85,
     "Levriers, bergers belges/Beauce": 1.1,
 }
+
+# --- Chat - entretien (NRC 2006 / valeurs pratiques retenues) ---
+# PB : NRC 2006 entretien = 65 g/Mcal (fourchette 65-90 selon source)
+PB_MCAL_ENTRETIEN_CHAT = 65
+# Ca/P : note pratique NRC 1986 "tout stade", identique au chien
+CA_MCAL_CHAT = 1.6
+P_MCAL_CHAT = 1.2
+
