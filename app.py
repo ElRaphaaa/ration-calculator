@@ -8,6 +8,9 @@ from models.besoins import (
 from models.ration import (
     charger_matieres_premieres, charger_amv, construire_ration,
 )
+from models.aliment_industriel import (
+    calculer_em_aliment, calculer_rpc_aliment, calculer_quantite_journaliere,
+)
 from utils.constantes import K1_OPTIONS, K2_OPTIONS
 
 st.set_page_config(page_title="Calculateur de rations", page_icon="🐾")
@@ -62,78 +65,114 @@ rpc_min = rpc_minimal(pb, bee)
 st.write(f"**RPC minimal requis :** {rpc_min:.0f} g PB/Mcal")
 st.caption("L'aliment choisi doit avoir un RPC superieur ou egal a cette valeur.")
 
-# --- Construction de la ration menagere ---
+# --- Choix du type de ration ---
 st.divider()
-st.subheader("Construction d'une ration menagere")
+type_ration = st.radio("Type de ration", ["Ration menagere", "Aliment industriel"])
 
-mp_df = charger_matieres_premieres()
-amv_df = charger_amv()
+if type_ration == "Ration menagere":
+    st.subheader("Construction d'une ration menagere")
 
-noms_viandes = mp_df[mp_df["categorie"] == "viande"]["nom"].tolist()
-noms_huiles = mp_df[mp_df["categorie"] == "huile"]["nom"].tolist()
-noms_graisses = mp_df[mp_df["categorie"] == "graisse"]["nom"].tolist()
-noms_legumes = mp_df[mp_df["categorie"] == "legume"]["nom"].tolist()
-noms_glucides = mp_df[mp_df["categorie"] == "glucide"]["nom"].tolist()
+    mp_df = charger_matieres_premieres()
+    amv_df = charger_amv()
 
-col_a, col_b = st.columns(2)
-nom_viande = col_a.selectbox("Source proteique (viande/poisson)", noms_viandes)
-nom_huile = col_b.selectbox("Huile", noms_huiles)
-nom_legume = col_a.selectbox("Legume", noms_legumes)
-nom_glucide = col_b.selectbox("Glucide", noms_glucides)
+    noms_viandes = mp_df[mp_df["categorie"] == "viande"]["nom"].tolist()
+    noms_huiles = mp_df[mp_df["categorie"] == "huile"]["nom"].tolist()
+    noms_graisses = mp_df[mp_df["categorie"] == "graisse"]["nom"].tolist()
+    noms_legumes = mp_df[mp_df["categorie"] == "legume"]["nom"].tolist()
+    noms_glucides = mp_df[mp_df["categorie"] == "glucide"]["nom"].tolist()
 
-if espece == "Chien":
-    pct_pb_viande = 0.80
-    pct_energie_huile = 0.05
-    pct_energie_legume = 0.05
-    nom_graisse = None
-    pct_energie_graisse = 0.0
-else:
-    pct_pb_viande = 0.90
-    pct_energie_huile = 0.025   # 2-3%
-    pct_energie_legume = 0.175  # 15-20%
-    pct_energie_graisse = 0.10  # 10%
-    nom_graisse = col_a.selectbox("Graisse", noms_graisses)
+    col_a, col_b = st.columns(2)
+    nom_viande = col_a.selectbox("Source proteique (viande/poisson)", noms_viandes)
+    nom_huile = col_b.selectbox("Huile", noms_huiles)
+    nom_legume = col_a.selectbox("Legume", noms_legumes)
+    nom_glucide = col_b.selectbox("Glucide", noms_glucides)
 
-if st.button("Calculer la ration"):
-    resultat = construire_ration(
-        bee=bee, besoin_pb=pb, besoin_ca=ca, besoin_p=p,
-        mp_df=mp_df, amv_df=amv_df,
-        nom_viande=nom_viande, nom_huile=nom_huile,
-        nom_legume=nom_legume, nom_glucide=nom_glucide,
-        pct_pb_viande=pct_pb_viande,
-        pct_energie_huile=pct_energie_huile,
-        pct_energie_legume=pct_energie_legume,
-        nom_graisse=nom_graisse,
-        pct_energie_graisse=pct_energie_graisse,
-    )
-
-    st.write("### Quantites journalieres")
-    st.write(f"- **{nom_viande}** : {resultat['qte_viande']:.0f} g")
-    st.write(f"- **{nom_huile}** : {resultat['qte_huile']:.1f} g")
-    if nom_graisse is not None:
-        st.write(f"- **{nom_graisse}** : {resultat['qte_graisse']:.1f} g")
-    st.write(f"- **{nom_legume}** : {resultat['qte_legume']:.0f} g")
-    st.write(f"- **{nom_glucide}** : {resultat['qte_glucide']:.0f} g")
-
-    st.write("### Verification Ca/P")
-    st.write(f"Ca apporte par la ration de base : {resultat['ca_base']:.2f} g")
-    st.write(f"P apporte par la ration de base : {resultat['p_base']:.2f} g")
-    st.write(f"Manque Ca : {resultat['manque_ca']:.2f} g")
-    st.write(f"Manque P : {resultat['manque_p']:.2f} g")
-
-    st.write("### Complement AMV")
-    st.write(f"AMV recommande : **{resultat['amv_choisi']}**")
-    st.write(f"Quantite AMV : {resultat['qte_amv']:.1f} g")
-
-    st.write("### Rapport Ca/P final")
-    if resultat["rapport_final"] is not None:
-        rapport = resultat["rapport_final"]
-        st.write(f"Rapport Ca/P final : **{rapport:.2f}**")
-        if rapport >= 1:
-            st.success("Rapport Ca/P >= 1 : OK")
-        else:
-            st.error("Rapport Ca/P < 1 : ATTENTION, ration desequilibree")
+    if espece == "Chien":
+        pct_pb_viande = 0.80
+        pct_energie_huile = 0.05
+        pct_energie_legume = 0.05
+        nom_graisse = None
+        pct_energie_graisse = 0.0
     else:
-        st.warning("Impossible de calculer le rapport final (P = 0)")
+        pct_pb_viande = 0.90
+        pct_energie_huile = 0.025
+        pct_energie_legume = 0.175
+        pct_energie_graisse = 0.10
+        nom_graisse = col_a.selectbox("Graisse", noms_graisses)
 
-    
+    if st.button("Calculer la ration"):
+        resultat = construire_ration(
+            bee=bee, besoin_pb=pb, besoin_ca=ca, besoin_p=p,
+            mp_df=mp_df, amv_df=amv_df,
+            nom_viande=nom_viande, nom_huile=nom_huile,
+            nom_legume=nom_legume, nom_glucide=nom_glucide,
+            pct_pb_viande=pct_pb_viande,
+            pct_energie_huile=pct_energie_huile,
+            pct_energie_legume=pct_energie_legume,
+            nom_graisse=nom_graisse,
+            pct_energie_graisse=pct_energie_graisse,
+        )
+
+        st.write("### Quantites journalieres")
+        st.write(f"- **{nom_viande}** : {resultat['qte_viande']:.0f} g")
+        st.write(f"- **{nom_huile}** : {resultat['qte_huile']:.1f} g")
+        if nom_graisse is not None:
+            st.write(f"- **{nom_graisse}** : {resultat['qte_graisse']:.1f} g")
+        st.write(f"- **{nom_legume}** : {resultat['qte_legume']:.0f} g")
+        st.write(f"- **{nom_glucide}** : {resultat['qte_glucide']:.0f} g")
+
+        st.write("### Verification Ca/P")
+        st.write(f"Ca apporte par la ration de base : {resultat['ca_base']:.2f} g")
+        st.write(f"P apporte par la ration de base : {resultat['p_base']:.2f} g")
+        st.write(f"Manque Ca : {resultat['manque_ca']:.2f} g")
+        st.write(f"Manque P : {resultat['manque_p']:.2f} g")
+
+        st.write("### Complement AMV")
+        st.write(f"AMV recommande : **{resultat['amv_choisi']}**")
+        st.write(f"Quantite AMV : {resultat['qte_amv']:.1f} g")
+
+        st.write("### Rapport Ca/P final")
+        if resultat["rapport_final"] is not None:
+            rapport = resultat["rapport_final"]
+            st.write(f"Rapport Ca/P final : **{rapport:.2f}**")
+            if rapport >= 1:
+                st.success("Rapport Ca/P >= 1 : OK")
+            else:
+                st.error("Rapport Ca/P < 1 : ATTENTION, ration desequilibree")
+        else:
+            st.warning("Impossible de calculer le rapport final (P = 0)")
+
+else:
+    st.subheader("Verification d'un aliment industriel")
+    st.caption("Renseigne les valeurs de l'etiquette (analyse moyenne, sur matiere telle quelle)")
+
+    col_x, col_y, col_z = st.columns(3)
+    pb_aliment = col_x.number_input("Proteines brutes (%)", min_value=0.0, max_value=100.0, value=25.0, step=0.1)
+    mg_aliment = col_y.number_input("Matieres grasses (%)", min_value=0.0, max_value=100.0, value=12.0, step=0.1)
+    cb_aliment = col_z.number_input("Cellulose brute / fibres (%)", min_value=0.0, max_value=100.0, value=3.0, step=0.1)
+
+    col_x2, col_y2 = st.columns(2)
+    mm_aliment = col_x2.number_input("Matieres minerales / cendres (%)", min_value=0.0, max_value=100.0, value=7.0, step=0.1)
+    eau_aliment = col_y2.number_input("Humidite / eau (%)", min_value=0.0, max_value=100.0, value=10.0, step=0.1)
+
+    if st.button("Analyser l'aliment"):
+        em, ena = calculer_em_aliment(pb_aliment, mg_aliment, cb_aliment, mm_aliment, eau_aliment, espece=espece)
+        rpc = calculer_rpc_aliment(pb_aliment, em)
+        quantite = calculer_quantite_journaliere(be, em)
+
+        st.write("### Resultats du calcul")
+        st.write(f"ENA (extractif non azote) : {ena:.1f} %")
+        st.write(f"Energie metabolisable (EM) : **{em:.0f} kcal/kg**")
+        st.write(f"RPC de l'aliment : **{rpc:.0f} g PB/Mcal**")
+
+        st.write("### Comparaison aux besoins")
+        st.write(f"RPC minimal requis : {rpc_min:.0f} g PB/Mcal")
+        if rpc >= rpc_min:
+            st.success(f"RPC suffisant ({rpc:.0f} >= {rpc_min:.0f})")
+        else:
+            st.error(f"RPC insuffisant ({rpc:.0f} < {rpc_min:.0f}) : aliment trop pauvre en proteines pour ce besoin")
+
+        st.write("### Quantite journaliere recommandee")
+        st.write(f"Sur la base du BE = {be:.0f} kcal/j : **{quantite:.0f} g/j**")
+
+        
