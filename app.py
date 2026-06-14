@@ -95,9 +95,9 @@ if type_ration == "Ration menagere":
         pct_energie_graisse = 0.0
     else:
         pct_pb_viande = 0.90
-        pct_energie_huile = 0.025
-        pct_energie_legume = 0.175
-        pct_energie_graisse = 0.10
+        pct_energie_huile = 0.04   # 2-5% selon §4.1 (NRC 2006)
+        pct_energie_legume = 0.03  # 2-4% selon §4.1 (NRC 2006)
+        pct_energie_graisse = 0.0
         nom_graisse = col_a.selectbox("Graisse", noms_graisses)
 
     if st.button("Calculer la ration"):
@@ -121,6 +121,13 @@ if type_ration == "Ration menagere":
         st.write(f"- **{nom_legume}** : {resultat['qte_legume']:.0f} g")
         st.write(f"- **{nom_glucide}** : {resultat['qte_glucide']:.0f} g")
 
+        total_ration = (
+            resultat['qte_viande'] + resultat['qte_huile']
+            + resultat.get('qte_graisse', 0) + resultat['qte_legume']
+            + resultat['qte_glucide']
+        )
+        st.write(f"**Total ration de base (hors AMV) : {total_ration:.0f} g/j**")
+
         st.write("### Verification Ca/P")
         st.write(f"Ca apporte par la ration de base : {resultat['ca_base']:.2f} g")
         st.write(f"P apporte par la ration de base : {resultat['p_base']:.2f} g")
@@ -135,10 +142,12 @@ if type_ration == "Ration menagere":
         if resultat["rapport_final"] is not None:
             rapport = resultat["rapport_final"]
             st.write(f"Rapport Ca/P final : **{rapport:.2f}**")
-            if rapport >= 1:
-                st.success("Rapport Ca/P >= 1 : OK")
+            if rapport < 1:
+                st.error("Rapport Ca/P < 1 : ATTENTION, carence relative en calcium - ration desequilibree")
+            elif rapport < 2:
+                st.warning("Rapport Ca/P entre 1 et 2 : minimum vital respecte, mais recommandation pratique (>= 2) non atteinte")
             else:
-                st.error("Rapport Ca/P < 1 : ATTENTION, ration desequilibree")
+                st.success("Rapport Ca/P >= 2 : OK (conforme a la recommandation pour rations menageres)")
         else:
             st.warning("Impossible de calculer le rapport final (P = 0)")
 
