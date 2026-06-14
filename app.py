@@ -5,6 +5,9 @@ from models.besoins import (
     besoin_proteines_chat, besoin_calcium_chat, besoin_phosphore_chat,
     rpc_minimal,
 )
+from models.ration_chien import (
+    charger_matieres_premieres, charger_amv, construire_ration_entretien,
+)
 from utils.constantes import K1_OPTIONS, K2_OPTIONS
 
 st.set_page_config(page_title="Calculateur de rations", page_icon="🐾")
@@ -40,7 +43,7 @@ if espece == "Chien":
 else:
     bee = bee_chat(pi)
     st.write(f"**BEE (entretien) :** {bee:.0f} kcal EM/j")
-    be = bee  # pas de k1/k2 pour le chat pour l'instant
+    be = bee
     st.info("Facteurs k1/k2 pour le chat a venir.")
 
     pb = besoin_proteines_chat(bee)
@@ -58,3 +61,58 @@ col3.metric("Phosphore (P)", f"{p:.2f} g/j")
 rpc_min = rpc_minimal(pb, bee)
 st.write(f"**RPC minimal requis :** {rpc_min:.0f} g PB/Mcal")
 st.caption("L'aliment choisi doit avoir un RPC superieur ou egal a cette valeur.")
+
+# --- Construction de la ration menagere (chien, entretien uniquement) ---
+if espece == "Chien":
+    st.divider()
+    st.subheader("Construction d'une ration menagere")
+
+    mp_df = charger_matieres_premieres()
+    amv_df = charger_amv()
+
+    noms_viandes = mp_df[mp_df["categorie"] == "viande"]["nom"].tolist()
+    noms_huiles = mp_df[mp_df["categorie"] == "huile"]["nom"].tolist()
+    noms_legumes = mp_df[mp_df["categorie"] == "legume"]["nom"].tolist()
+    noms_glucides = mp_df[mp_df["categorie"] == "glucide"]["nom"].tolist()
+
+    col_a, col_b = st.columns(2)
+    nom_viande = col_a.selectbox("Source proteique (viande/poisson)", noms_viandes)
+    nom_huile = col_b.selectbox("Huile", noms_huiles)
+    nom_legume = col_a.selectbox("Legume", noms_legumes)
+    nom_glucide = col_b.selectbox("Glucide", noms_glucides)
+
+    if st.button("Calculer la ration"):
+        resultat = construire_ration_entretien(
+            bee=bee, besoin_pb=pb, besoin_ca=ca, besoin_p=p,
+            mp_df=mp_df, amv_df=amv_df,
+            nom_viande=nom_viande, nom_huile=nom_huile,
+            nom_legume=nom_legume, nom_glucide=nom_glucide,
+        )
+
+        st.write("### Quantites journalieres")
+        st.write(f"- **{nom_viande}** : {resultat['qte_viande']:.0f} g")
+        st.write(f"- **{nom_huile}** : {resultat['qte_huile']:.1f} g")
+        st.write(f"- **{nom_legume}** : {resultat['qte_legume']:.0f} g")
+        st.write(f"- **{nom_glucide}** : {resultat['qte_glucide']:.0f} g")
+
+        st.write("### Verification Ca/P")
+        st.write(f"Ca apporte par la ration de base : {resultat['ca_base']:.2f} g")
+        st.write(f"P apporte par la ration de base : {resultat['p_base']:.2f} g")
+        st.write(f"Manque Ca : {resultat['manque_ca']:.2f} g")
+        st.write(f"Manque P : {resultat['manque_p']:.2f} g")
+
+        st.write("### Complement AMV")
+        st.write(f"AMV recommande : **{resultat['amv_choisi']}**")
+        st.write(f"Quantite AMV : {resultat['qte_amv']:.1f} g")
+
+        st.write("### Rapport Ca/P final")
+        if resultat["rapport_final"] is not None:
+            rapport = resultat["rapport_final"]
+            st.write(f"Rapport Ca/P final : **{rapport:.2f}**")
+            if rapport >= 1:
+                st.success("Rapport Ca/P >= 1 : OK")
+            else:
+                st.error("Rapport Ca/P < 1 : ATTENTION, ration desequilibree")
+        else:
+            st.warning("Impossible de calculer le rapport final (P = 0)")
+            

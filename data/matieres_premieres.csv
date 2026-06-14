@@ -1,0 +1,15 @@
+nom,categorie,energie_kcal_100g,pb_g_100g,ca_g_100g,p_g_100g
+Steak hache 5% MG,viande,130,21.9,0.007,0.184
+Steak hache 10% MG,viande,171,20,0.012,0.184
+Steak hache 15% MG,viande,209,20.2,0.00933,0.171
+Poulet cuisse sans peau,viande,114,19.3,0.0103,0.173
+Poulet filet sans peau,viande,110,23.4,0.0033,0.24
+Dinde viande crue,viande,110,22.4,0.0105,0.17
+Saumon cru elevage,viande,194,20.5,0.00584,0.181
+Lieu noir,viande,82.5,18.8,0.0147,0.207
+Riz blanc cuit,glucide,115,2.5,0.01,0.08
+Riz complet cuit,glucide,158,3.2,0.013,0.12
+Pates cuites,glucide,126,4,0.017,0.059
+Haricots verts cuits,legume,29.4,2,0.055,0.036
+Courgettes cuites,legume,15.5,0.93,0.019,0.065
+Huile de colza,huile,900,0,0,0
