@@ -45,3 +45,16 @@ def rpc_aliment(pb_pourcent, em_kcal_par_kg):
     em_mcal_par_kg = em_kcal_par_kg / 1000
     return pb_g_par_kg / em_mcal_par_kg
 
+def rpc_minimal_ajuste(rpc_min, k):
+    # Si k < 1 (restriction energetique), l aliment doit avoir un RPC > rpc_min / k
+    if k >= 1:
+        return rpc_min
+    return rpc_min / k
+
+
+def k_limite(rpc_aliment, rpc_min):
+    # k limite = restriction maximale toleree compte tenu du RPC de l aliment
+    # tant que RPC_aliment > rpc_min / k -> k > rpc_min / RPC_aliment
+    if rpc_aliment <= 0:
+        return None
+    return rpc_min / rpc_aliment

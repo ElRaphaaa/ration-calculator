@@ -13,6 +13,12 @@ from models.aliment_industriel import (
 )
 from utils.constantes import K1_OPTIONS, K2_OPTIONS
 
+from models.besoins import (
+    besoin_proteines_chien, besoin_calcium_chien, besoin_phosphore_chien,
+    besoin_proteines_chat, besoin_calcium_chat, besoin_phosphore_chat,
+    rpc_minimal, rpc_minimal_ajuste,
+)
+
 st.set_page_config(page_title="Calculateur de rations", page_icon="🐾")
 
 st.title("🐾 Calculateur de rations - Chien & Chat")
@@ -38,6 +44,15 @@ if espece == "Chien":
 
     be = be_final_chien(bee, k1, k2)
     st.write(f"**BE corrige (k1={k1}, k2={k2}) :** {be:.0f} kcal EM/j")
+
+    k_global = k1 * k2
+    if k_global < 1:
+        st.warning(
+            f"k = k1 x k2 = {k_global:.2f} < 1 (restriction energetique). "
+            f"Les besoins en PB/Ca/P restent calcules sur le BEE theorique (non restreint). "
+            f"L'aliment choisi doit avoir un RPC >= {60/k_global:.0f} g PB/Mcal "
+            f"(au lieu de 60) pour ne pas restreindre les proteines."
+        )
 
     pb = besoin_proteines_chien(bee)
     ca = besoin_calcium_chien(bee)
