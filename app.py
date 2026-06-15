@@ -1,13 +1,23 @@
 import streamlit as st
-from models.energie import poids_ideal, bee_chien, bee_chat, be_final_chien, be_gestation_chienne, be_lactation_chienne, be_croissance_chiot, k3_croissance
+
+from models.energie import (
+    poids_ideal, bee_chien, bee_chat, be_final_chien,
+    be_gestation_chienne, be_lactation_chienne, be_croissance_chiot, k3_croissance,
+    be_gestation_chat, be_lactation_chat, be_croissance_chaton, c_croissance_chat,
+)
+
 from models.besoins import (
     besoin_proteines_chien, besoin_calcium_chien, besoin_phosphore_chien,
     besoin_proteines_chat, besoin_calcium_chat, besoin_phosphore_chat,
     besoin_proteines_gestation_chienne, besoin_calcium_gestation_chienne, besoin_phosphore_gestation_chienne,
     besoin_proteines_lactation_chienne, besoin_calcium_lactation_chienne, besoin_phosphore_lactation_chienne,
     besoin_proteines_croissance_chiot, besoin_calcium_croissance_chiot, besoin_phosphore_croissance_chiot,
+    besoin_proteines_gestation_chatte, besoin_calcium_gestation_chatte, besoin_phosphore_gestation_chatte,
+    besoin_proteines_lactation_chatte, besoin_calcium_lactation_chatte, besoin_phosphore_lactation_chatte,
+    besoin_proteines_croissance_chaton, besoin_calcium_croissance_chaton, besoin_phosphore_croissance_chaton,
     rpc_minimal, rpc_minimal_ajuste,
 )
+
 from models.ration import (
     charger_matieres_premieres, charger_amv, construire_ration,
 )
@@ -109,14 +119,62 @@ if espece == "Chien":
 
 else:
     bee = bee_chat(pi)
-    st.write(f"**BEE (entretien) :** {bee:.0f} kcal EM/j")
-    be = bee
-    st.info("Facteurs k1/k2 pour le chat a venir.")
+    st.write(f"**BEE entretien theorique (poids ideal {pi:.1f} kg) :** {bee:.0f} kcal EM/j")
+    st.caption("Valeur de reference pour le stade Entretien. Pour les autres stades, voir le BE specifique ci-dessous.")
 
-    pb = besoin_proteines_chat(bee)
-    ca = besoin_calcium_chat(bee)
-    p = besoin_phosphore_chat(bee)
+    stade = st.selectbox("Stade physiologique", ["Entretien", "Gestation", "Lactation", "Croissance (chaton)"])
 
+    if stade == "Entretien":
+        be = bee
+        st.write(f"**BE (entretien) :** {be:.0f} kcal EM/j")
+        st.info("Facteurs k1/k2 pour le chat a venir.")
+
+        pb = besoin_proteines_chat(bee)
+        ca = besoin_calcium_chat(bee)
+        p = besoin_phosphore_chat(bee)
+
+    elif stade == "Gestation":
+        poids_mere = st.number_input("Poids de la mere a vide (kg)", min_value=0.1, value=poids_reel, step=0.1)
+
+        be = be_gestation_chat(poids_mere)
+        st.write(f"**BE gestation :** {be:.0f} kcal EM/j")
+        st.caption("BE = 140 x P_mere^0.67")
+
+        pb = besoin_proteines_gestation_chatte(be)
+        ca = besoin_calcium_gestation_chatte(be)
+        p = besoin_phosphore_gestation_chatte(be)
+
+    elif stade == "Lactation":
+        poids_mere = st.number_input("Poids de la mere a vide (kg)", min_value=0.1, value=poids_reel, step=0.1)
+        nb_chatons = st.number_input("Nombre de chatons", min_value=1, value=4, step=1)
+        semaine = st.selectbox("Semaine de lactation", [1, 2, 3, 4, 5, 6, 7], index=2)
+
+        be = be_lactation_chat(poids_mere, nb_chatons, semaine)
+        st.write(f"**BE lactation (semaine {semaine}) :** {be:.0f} kcal EM/j")
+        st.caption("BE = 100 x P_mere^0.67 + P_mere x N x L")
+
+        pb = besoin_proteines_lactation_chatte(be)
+        ca = besoin_calcium_lactation_chatte(be)
+        p = besoin_phosphore_lactation_chatte(be)
+
+    else:
+        poids_chaton = st.number_input("Poids actuel du chaton (kg)", min_value=0.05, value=poids_reel, step=0.05)
+        poids_adulte = st.number_input("Poids adulte attendu (kg)", min_value=0.5, value=4.0, step=0.5)
+
+        be = be_croissance_chaton(poids_chaton, poids_adulte)
+        ratio = poids_chaton / poids_adulte
+
+        if ratio < 0.05:
+            st.write(f"**BE croissance (nouveau-ne) :** {be:.0f} kcal EM/j")
+            st.caption("BE = 250 x Pj (formule nouveau-ne)")
+        else:
+            c = c_croissance_chat(poids_chaton, poids_adulte)
+            st.write(f"**BE croissance :** {be:.0f} kcal EM/j")
+            st.caption(f"BE = 100 x Pj^0.67 x C, avec C = 6.7 x [exp(-0.189 x Pj/Pad) - 0.66] = {c:.2f}")
+
+        pb = besoin_proteines_croissance_chaton(be)
+        ca = besoin_calcium_croissance_chaton(be)
+        p = besoin_phosphore_croissance_chaton(be)
 st.divider()
 st.subheader("Besoins quotidiens (calcules sur le BEE theorique)")
 

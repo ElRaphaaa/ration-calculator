@@ -1,6 +1,7 @@
 """
 Calculs des besoins energetiques - chien et chat (entretien)
 """
+import math
 
 from utils.constantes import (
     BEE_COEF_CHIEN, BEE_EXPOSANT_CHIEN,
@@ -67,3 +68,35 @@ def be_croissance_chiot(poids_chiot_kg, poids_adulte_kg, seuil_nouveau_ne=0.05):
         return 250 * poids_chiot_kg
     k3 = k3_croissance(poids_chiot_kg, poids_adulte_kg)
     return bee_chien(poids_chiot_kg) * k3
+
+
+
+def be_gestation_chat(poids_mere_kg):
+    return 140 * (poids_mere_kg ** 0.67)
+
+
+def be_lactation_chat(poids_mere_kg, nb_chatons, semaine_lactation):
+    if nb_chatons <= 2:
+        n = 18
+    elif nb_chatons <= 4:
+        n = 60
+    else:
+        n = 70
+
+    facteurs_l = {1: 0.9, 2: 0.9, 3: 1.2, 4: 1.2, 5: 1.1, 6: 1.0, 7: 0.8}
+    l = facteurs_l.get(semaine_lactation, 0.8)
+
+    return 100 * (poids_mere_kg ** 0.67) + poids_mere_kg * n * l
+
+
+def c_croissance_chat(poids_chaton_kg, poids_adulte_kg):
+    ratio = poids_chaton_kg / poids_adulte_kg
+    return 6.7 * (math.exp(-0.189 * ratio) - 0.66)
+
+
+def be_croissance_chaton(poids_chaton_kg, poids_adulte_kg, seuil_nouveau_ne=0.05):
+    ratio = poids_chaton_kg / poids_adulte_kg
+    if ratio < seuil_nouveau_ne:
+        return 250 * poids_chaton_kg
+    c = c_croissance_chat(poids_chaton_kg, poids_adulte_kg)
+    return 100 * (poids_chaton_kg ** 0.67) * c
