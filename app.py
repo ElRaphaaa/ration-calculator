@@ -152,15 +152,18 @@ if type_ration == "Ration menagere":
     nom_glucide = col_b.selectbox("Glucide", noms_glucides)
 
     if espece == "Chien":
-        pct_pb_viande = 0.80
+        if stade == "Entretien":
+            pct_pb_viande = 0.80
+        else:
+            pct_pb_viande = 0.90  # gestation/lactation/croissance : >= 90% du besoin PB par proteines animales (§5.9/§6.2)
         pct_energie_huile = 0.05
         pct_energie_legume = 0.05
         nom_graisse = None
         pct_energie_graisse = 0.0
     else:
         pct_pb_viande = 0.90
-        pct_energie_huile = 0.04   # 2-5% selon §4.1 (NRC 2006)
-        pct_energie_legume = 0.03  # 2-4% selon §4.1 (NRC 2006)
+        pct_energie_huile = 0.04
+        pct_energie_legume = 0.03
         pct_energie_graisse = 0.0
         nom_graisse = col_a.selectbox("Graisse", noms_graisses)
 
