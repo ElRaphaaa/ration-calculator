@@ -24,17 +24,81 @@ from models.aliment_industriel import (
 from utils.constantes import K1_OPTIONS, K2_OPTIONS
 
 st.set_page_config(page_title="Calculateur de rations", page_icon="🐾", layout="centered")
+st.markdown("""
+<style>
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    [data-testid="stMetricValue"] {
+        font-size: 1.8rem;
+    }
+    h1 {
+        color: #4A7C59;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-st.title("🐾 Calculateur de rations - Chien & Chat")
-st.caption("Outil d'aide au rationnement - usage pedagogique")
-
-tab1, tab2, tab3 = st.tabs(["1. Besoins", "2. Ration", "3. Toxicologie"])
 
 # ============================================================
-# ONGLET 1 - BESOINS
+# NAVIGATION (SIDEBAR)
 # ============================================================
-with tab1:
-    espece = st.selectbox("Espece", ["Chien", "Chat"])
+st.sidebar.title("🐾 Menu")
+
+pages = {
+    "🏠 Accueil": "accueil",
+    "🧮 Besoins de l'animal": "besoins",
+    "🍖 Ration": "ration",
+    "☣️ Toxicologie": "toxicologie",
+}
+
+choix_page = st.sidebar.radio("Navigation", list(pages.keys()), label_visibility="collapsed")
+page = pages[choix_page]
+
+st.sidebar.divider()
+st.sidebar.caption("Projet de these veterinaire - ENVA")
+st.sidebar.caption("Outil pedagogique de rationnement")
+
+
+# ============================================================
+# PAGE ACCUEIL
+# ============================================================
+if page == "accueil":
+    st.title("🐾 Calculateur de rations - Chien & Chat")
+    st.subheader("Outil d'aide au rationnement pour chien et chat")
+
+    st.write(
+        "Cette application vous aide a estimer les besoins nutritionnels de votre "
+        "animal et a construire une ration adaptee, qu'elle soit menagere ou industrielle."
+    )
+
+    st.divider()
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        with st.container(border=True):
+            st.markdown("#### 🧮 Besoins")
+            st.write("Calculez les besoins energetiques et nutritionnels de votre animal selon son stade physiologique.")
+    with col2:
+        with st.container(border=True):
+            st.markdown("#### 🍖 Ration")
+            st.write("Construisez une ration menagere equilibree ou analysez un aliment industriel.")
+    with col3:
+        with st.container(border=True):
+            st.markdown("#### ☣️ Toxicologie")
+            st.write("Consultez les substances potentiellement toxiques (module en construction).")
+
+    st.divider()
+    st.info("👈 Utilisez le menu a gauche pour naviguer entre les sections.")
+
+# ============================================================
+# PAGE BESOINS
+# ============================================================
+elif page == "besoins":
+    st.title("🧮 Besoins de l'animal")
+
+    espece = st.selectbox("Espece", ["Chien 🐕", "Chat 🐈"])
+    espece = "Chien" if espece.startswith("Chien") else "Chat"
 
     poids_reel = st.number_input("Poids reel (kg)", min_value=0.1, value=20.0, step=0.1)
     bcs = st.slider("BCS / NEC (1-9)", min_value=1, max_value=9, value=5)
@@ -177,10 +241,11 @@ with tab1:
     st.divider()
     st.subheader("Besoins quotidiens")
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Proteines (PB)", f"{pb:.1f} g/j")
-    col2.metric("Calcium (Ca)", f"{ca:.2f} g/j")
-    col3.metric("Phosphore (P)", f"{p:.2f} g/j")
+    with st.container(border=True):
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Proteines (PB)", f"{pb:.1f} g/j")
+        col2.metric("Calcium (Ca)", f"{ca:.2f} g/j")
+        col3.metric("Phosphore (P)", f"{p:.2f} g/j")
 
     rpc_min = rpc_minimal(pb, be)
     st.write(f"**RPC minimal requis :** {rpc_min:.0f} g PB/Mcal")
@@ -197,7 +262,6 @@ with tab1:
             "a celui requis par l'animal pour couvrir ses besoins proteiques."
         )
 
-    # Sauvegarde dans session_state pour l'onglet Ration
     st.session_state["espece"] = espece
     st.session_state["stade"] = stade
     st.session_state["bee"] = bee
@@ -207,12 +271,17 @@ with tab1:
     st.session_state["p"] = p
     st.session_state["rpc_min"] = rpc_min
 
+    st.success("✅ Besoins calcules. Rendez-vous dans l'onglet 'Ration' pour construire la ration.")
+
+
 # ============================================================
-# ONGLET 2 - RATION
+# PAGE RATION
 # ============================================================
-with tab2:
+elif page == "ration":
+    st.title("🍖 Construction de la ration")
+
     if "be" not in st.session_state:
-        st.info("Renseigne d'abord les informations dans l'onglet '1. Besoins'.")
+        st.warning("⚠️ Renseignez d'abord les informations dans la section '🧮 Besoins de l'animal'.")
     else:
         espece = st.session_state["espece"]
         stade = st.session_state["stade"]
@@ -223,7 +292,10 @@ with tab2:
         p = st.session_state["p"]
         rpc_min = st.session_state["rpc_min"]
 
-        st.write(f"**Espece :** {espece}  -  **Stade :** {stade}  -  **BE :** {be:.0f} kcal EM/j")
+        emoji_espece = "🐕" if espece == "Chien" else "🐈"
+        with st.container(border=True):
+            st.markdown(f"### {emoji_espece} {espece} - {stade}")
+            st.write(f"**Besoin energetique (BE) :** {be:.0f} kcal EM/j")
 
         type_ration = st.radio("Type de ration", ["Ration menagere", "Aliment industriel"])
 
@@ -345,10 +417,10 @@ with tab2:
                 st.write("### Quantite journaliere recommandee")
                 st.write(f"Sur la base du BE = {be:.0f} kcal/j : **{quantite:.0f} g/j**")
 
+
 # ============================================================
-# ONGLET 3 - TOXICOLOGIE
+# PAGE TOXICOLOGIE
 # ============================================================
-with tab3:
-    st.subheader("Substances toxiques")
-    st.info("Module en construction - arrive dans la prochaine etape !")
-    
+else:
+    st.title("☣️ Toxicologie")
+    st.info("Module en construction - arrive prochainement !")
