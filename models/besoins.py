@@ -2,6 +2,7 @@ from utils.constantes import (
     PB_MCAL_ENTRETIEN_CHIEN, CA_MCAL_CHIEN, P_MCAL_CHIEN,
     PB_MCAL_ENTRETIEN_CHAT, CA_MCAL_CHAT, P_MCAL_CHAT,
     PB_MCAL_GESTATION_CHIENNE, CA_MCAL_GESTATION_CHIENNE, P_MCAL_GESTATION_CHIENNE,
+    PB_MCAL_CROISSANCE_CHIOT, CA_MCAL_CROISSANCE_CHIOT, P_MCAL_CROISSANCE_CHIOT,
 )
 
 def besoin_proteines_chien(bee):
@@ -71,3 +72,25 @@ def besoin_calcium_gestation_chienne(be_gestation):
 
 def besoin_phosphore_gestation_chienne(be_gestation):
     return P_MCAL_GESTATION_CHIENNE * (be_gestation / 1000)
+
+def besoin_proteines_lactation_chienne(be_lactation):
+    return PB_MCAL_GESTATION_CHIENNE * (be_lactation / 1000)
+
+
+def besoin_calcium_lactation_chienne(be_lactation):
+    return CA_MCAL_GESTATION_CHIENNE * (be_lactation / 1000)
+
+
+def besoin_phosphore_lactation_chienne(be_lactation):
+    return P_MCAL_GESTATION_CHIENNE * (be_lactation / 1000)
+
+def besoin_proteines_croissance_chiot(be_croissance):
+    return PB_MCAL_CROISSANCE_CHIOT * (be_croissance / 1000)
+
+
+def besoin_calcium_croissance_chiot(be_croissance):
+    return CA_MCAL_CROISSANCE_CHIOT * (be_croissance / 1000)
+
+
+def besoin_phosphore_croissance_chiot(be_croissance):
+    return P_MCAL_CROISSANCE_CHIOT * (be_croissance / 1000)

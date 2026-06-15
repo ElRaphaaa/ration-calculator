@@ -1,9 +1,11 @@
 import streamlit as st
-from models.energie import poids_ideal, bee_chien, bee_chat, be_final_chien, be_gestation_chienne
+from models.energie import poids_ideal, bee_chien, bee_chat, be_final_chien, be_gestation_chienne, be_lactation_chienne, be_croissance_chiot, k3_croissance
 from models.besoins import (
     besoin_proteines_chien, besoin_calcium_chien, besoin_phosphore_chien,
     besoin_proteines_chat, besoin_calcium_chat, besoin_phosphore_chat,
     besoin_proteines_gestation_chienne, besoin_calcium_gestation_chienne, besoin_phosphore_gestation_chienne,
+    besoin_proteines_lactation_chienne, besoin_calcium_lactation_chienne, besoin_phosphore_lactation_chienne,
+    besoin_proteines_croissance_chiot, besoin_calcium_croissance_chiot, besoin_phosphore_croissance_chiot,
     rpc_minimal, rpc_minimal_ajuste,
 )
 from models.ration import (
@@ -35,9 +37,9 @@ st.write(f"**Poids ideal estime :** {pi:.2f} kg")
 
 if espece == "Chien":
     bee = bee_chien(pi)
-    st.write(f"**BEE (entretien theorique) :** {bee:.0f} kcal EM/j")
-
-    stade = st.selectbox("Stade physiologique", ["Entretien", "Gestation (dernier tiers)"])
+    st.write(f"**BEE entretien theorique (poids ideal {pi:.1f} kg) :** {bee:.0f} kcal EM/j")
+    st.caption("Valeur de reference pour le stade Entretien. Pour les autres stades, voir le BE specifique ci-dessous.")
+    stade = st.selectbox("Stade physiologique", ["Entretien", "Gestation (dernier tiers)", "Lactation", "Croissance (chiot)"])
 
     if stade == "Entretien":
         race = st.selectbox("Race / categorie (k1)", list(K1_OPTIONS.keys()))
@@ -62,7 +64,7 @@ if espece == "Chien":
         ca = besoin_calcium_chien(bee)
         p = besoin_phosphore_chien(bee)
 
-    else:
+    elif stade == "Gestation (dernier tiers)":
         poids_mere = st.number_input("Poids de la mere a vide (kg)", min_value=0.1, value=poids_reel, step=0.1)
 
         be = be_gestation_chienne(pi, poids_mere)
@@ -72,6 +74,38 @@ if espece == "Chien":
         pb = besoin_proteines_gestation_chienne(be)
         ca = besoin_calcium_gestation_chienne(be)
         p = besoin_phosphore_gestation_chienne(be)
+
+    elif stade == "Lactation":
+        poids_mere = st.number_input("Poids de la mere a vide (kg)", min_value=0.1, value=poids_reel, step=0.1)
+        nb_chiots = st.number_input("Nombre de chiots", min_value=1, value=6, step=1)
+        semaine = st.selectbox("Semaine de lactation", [1, 2, 3, 4], index=2)
+
+        be = be_lactation_chienne(poids_mere, nb_chiots, semaine)
+        st.write(f"**BE lactation (semaine {semaine}) :** {be:.0f} kcal EM/j")
+        st.caption("BE = 145 x P_mere^0.75 + [P_mere x (24n+12m) x L]")
+
+        pb = besoin_proteines_lactation_chienne(be)
+        ca = besoin_calcium_lactation_chienne(be)
+        p = besoin_phosphore_lactation_chienne(be)
+
+    else:
+        poids_chiot = st.number_input("Poids actuel du chiot (kg)", min_value=0.05, value=poids_reel, step=0.05)
+        poids_adulte = st.number_input("Poids adulte attendu (kg)", min_value=0.5, value=20.0, step=0.5)
+
+        be = be_croissance_chiot(poids_chiot, poids_adulte)
+        ratio = poids_chiot / poids_adulte
+
+        if ratio < 0.05:
+            st.write(f"**BE croissance (nouveau-ne) :** {be:.0f} kcal EM/j")
+            st.caption("BE = 250 x Pj (formule nouveau-ne)")
+        else:
+            k3 = k3_croissance(poids_chiot, poids_adulte)
+            st.write(f"**BE croissance :** {be:.0f} kcal EM/j")
+            st.caption(f"BE = Bee(Pj) x k3, avec k3 = (1.8 - Pj/Pad)/0.8 = {k3:.2f}")
+
+        pb = besoin_proteines_croissance_chiot(be)
+        ca = besoin_calcium_croissance_chiot(be)
+        p = besoin_phosphore_croissance_chiot(be)
 
 else:
     bee = bee_chat(pi)

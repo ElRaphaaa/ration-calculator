@@ -40,3 +40,7 @@ P_MCAL_CHAT = 1.2
 PB_MCAL_GESTATION_CHIENNE = 75   # pratique 70-80
 CA_MCAL_GESTATION_CHIENNE = 1.9
 P_MCAL_GESTATION_CHIENNE = 1.2
+# --- Chiot croissance (NRC 2006 §4 / §4.1) ---
+PB_MCAL_CROISSANCE_CHIOT = 75   # pratique, fourchette 80 (jeune) -> 70 (proche adulte)
+CA_MCAL_CROISSANCE_CHIOT = 3.0
+P_MCAL_CROISSANCE_CHIOT = 2.5

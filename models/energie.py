@@ -37,3 +37,33 @@ def be_gestation_chienne(poids_ideal_kg, poids_mere_kg):
     # BE fin de gestation = Bee(Pi) + 26 * P_mere (kcal EM/j)
     # P_mere = poids a vide (hors produits de gestation)
     return bee_chien(poids_ideal_kg) + 26 * poids_mere_kg
+
+def production_lait_45j(poids_mere_kg, nb_chiots):
+    if poids_mere_kg < 8:
+        c = 1.6
+    elif poids_mere_kg <= 25:
+        c = 1.8
+    else:
+        c = 2.0
+    return poids_mere_kg * c + (nb_chiots - 4) * poids_mere_kg / 10
+
+
+def be_lactation_chienne(poids_mere_kg, nb_chiots, semaine_lactation):
+    n = min(nb_chiots, 4)
+    m = max(nb_chiots - 4, 0)
+
+    facteurs_l = {1: 0.75, 2: 0.95, 3: 1.1, 4: 1.2}
+    l = facteurs_l.get(semaine_lactation, 1.2)
+
+    return 145 * (poids_mere_kg ** 0.75) + poids_mere_kg * (24 * n + 12 * m) * l
+
+def k3_croissance(poids_chiot_kg, poids_adulte_kg):
+    return (1.8 - poids_chiot_kg / poids_adulte_kg) / 0.8
+
+
+def be_croissance_chiot(poids_chiot_kg, poids_adulte_kg, seuil_nouveau_ne=0.05):
+    ratio = poids_chiot_kg / poids_adulte_kg
+    if ratio < seuil_nouveau_ne:
+        return 250 * poids_chiot_kg
+    k3 = k3_croissance(poids_chiot_kg, poids_adulte_kg)
+    return bee_chien(poids_chiot_kg) * k3
