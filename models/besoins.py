@@ -1,8 +1,8 @@
 from utils.constantes import (
     PB_MCAL_ENTRETIEN_CHIEN, CA_MCAL_CHIEN, P_MCAL_CHIEN,
     PB_MCAL_ENTRETIEN_CHAT, CA_MCAL_CHAT, P_MCAL_CHAT,
+    PB_MCAL_GESTATION_CHIENNE, CA_MCAL_GESTATION_CHIENNE, P_MCAL_GESTATION_CHIENNE,
 )
-
 
 def besoin_proteines_chien(bee):
     # Besoin proteique entretien chien (g PB/j) = 60 * (BEE/1000)
@@ -58,3 +58,16 @@ def k_limite(rpc_aliment, rpc_min):
     if rpc_aliment <= 0:
         return None
     return rpc_min / rpc_aliment
+
+
+
+def besoin_proteines_gestation_chienne(be_gestation):
+    return PB_MCAL_GESTATION_CHIENNE * (be_gestation / 1000)
+
+
+def besoin_calcium_gestation_chienne(be_gestation):
+    return CA_MCAL_GESTATION_CHIENNE * (be_gestation / 1000)
+
+
+def besoin_phosphore_gestation_chienne(be_gestation):
+    return P_MCAL_GESTATION_CHIENNE * (be_gestation / 1000)

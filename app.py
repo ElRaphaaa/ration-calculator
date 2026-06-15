@@ -1,9 +1,10 @@
 import streamlit as st
-from models.energie import poids_ideal, bee_chien, bee_chat, be_final_chien
+from models.energie import poids_ideal, bee_chien, bee_chat, be_final_chien, be_gestation_chienne
 from models.besoins import (
     besoin_proteines_chien, besoin_calcium_chien, besoin_phosphore_chien,
     besoin_proteines_chat, besoin_calcium_chat, besoin_phosphore_chat,
-    rpc_minimal,
+    besoin_proteines_gestation_chienne, besoin_calcium_gestation_chienne, besoin_phosphore_gestation_chienne,
+    rpc_minimal, rpc_minimal_ajuste,
 )
 from models.ration import (
     charger_matieres_premieres, charger_amv, construire_ration,
@@ -36,27 +37,41 @@ if espece == "Chien":
     bee = bee_chien(pi)
     st.write(f"**BEE (entretien theorique) :** {bee:.0f} kcal EM/j")
 
-    race = st.selectbox("Race / categorie (k1)", list(K1_OPTIONS.keys()))
-    activite = st.selectbox("Niveau d'activite (k2)", list(K2_OPTIONS.keys()), index=1)
+    stade = st.selectbox("Stade physiologique", ["Entretien", "Gestation (dernier tiers)"])
 
-    k1 = K1_OPTIONS[race]
-    k2 = K2_OPTIONS[activite]
+    if stade == "Entretien":
+        race = st.selectbox("Race / categorie (k1)", list(K1_OPTIONS.keys()))
+        activite = st.selectbox("Niveau d'activite (k2)", list(K2_OPTIONS.keys()), index=1)
 
-    be = be_final_chien(bee, k1, k2)
-    st.write(f"**BE corrige (k1={k1}, k2={k2}) :** {be:.0f} kcal EM/j")
+        k1 = K1_OPTIONS[race]
+        k2 = K2_OPTIONS[activite]
 
-    k_global = k1 * k2
-    if k_global < 1:
-        st.warning(
-            f"k = k1 x k2 = {k_global:.2f} < 1 (restriction energetique). "
-            f"Les besoins en PB/Ca/P restent calcules sur le BEE theorique (non restreint). "
-            f"L'aliment choisi doit avoir un RPC >= {60/k_global:.0f} g PB/Mcal "
-            f"(au lieu de 60) pour ne pas restreindre les proteines."
-        )
+        be = be_final_chien(bee, k1, k2)
+        st.write(f"**BE corrige (k1={k1}, k2={k2}) :** {be:.0f} kcal EM/j")
 
-    pb = besoin_proteines_chien(bee)
-    ca = besoin_calcium_chien(bee)
-    p = besoin_phosphore_chien(bee)
+        k_global = k1 * k2
+        if k_global < 1:
+            st.warning(
+                f"k = k1 x k2 = {k_global:.2f} < 1 (restriction energetique). "
+                f"Les besoins en PB/Ca/P restent calcules sur le BEE theorique (non restreint). "
+                f"L'aliment choisi doit avoir un RPC >= {60/k_global:.0f} g PB/Mcal "
+                f"(au lieu de 60) pour ne pas restreindre les proteines."
+            )
+
+        pb = besoin_proteines_chien(bee)
+        ca = besoin_calcium_chien(bee)
+        p = besoin_phosphore_chien(bee)
+
+    else:
+        poids_mere = st.number_input("Poids de la mere a vide (kg)", min_value=0.1, value=poids_reel, step=0.1)
+
+        be = be_gestation_chienne(pi, poids_mere)
+        st.write(f"**BE gestation (fin de gestation) :** {be:.0f} kcal EM/j")
+        st.caption("BE = BEE(Pi) + 26 x P_mere - formule applicable au dernier tiers de gestation")
+
+        pb = besoin_proteines_gestation_chienne(be)
+        ca = besoin_calcium_gestation_chienne(be)
+        p = besoin_phosphore_gestation_chienne(be)
 
 else:
     bee = bee_chat(pi)
@@ -76,7 +91,7 @@ col1.metric("Proteines (PB)", f"{pb:.1f} g/j")
 col2.metric("Calcium (Ca)", f"{ca:.2f} g/j")
 col3.metric("Phosphore (P)", f"{p:.2f} g/j")
 
-rpc_min = rpc_minimal(pb, bee)
+rpc_min = rpc_minimal(pb, be)
 st.write(f"**RPC minimal requis :** {rpc_min:.0f} g PB/Mcal")
 st.caption("L'aliment choisi doit avoir un RPC superieur ou egal a cette valeur.")
 

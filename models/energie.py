@@ -32,3 +32,8 @@ def be_final_chien(bee: float, k1: float = 1.0, k2: float = 1.0) -> float:
     BE = BEE * k1 * k2
     """
     return bee * k1 * k2
+
+def be_gestation_chienne(poids_ideal_kg, poids_mere_kg):
+    # BE fin de gestation = Bee(Pi) + 26 * P_mere (kcal EM/j)
+    # P_mere = poids a vide (hors produits de gestation)
+    return bee_chien(poids_ideal_kg) + 26 * poids_mere_kg
