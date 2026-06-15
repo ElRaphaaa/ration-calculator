@@ -21,6 +21,7 @@ from models.ration import (
 from models.aliment_industriel import (
     calculer_em_aliment, calculer_rpc_aliment, calculer_quantite_journaliere,
 )
+from models.scan_produit import rechercher_produit
 from utils.constantes import K1_OPTIONS, K2_OPTIONS
 
 st.set_page_config(page_title="Calculateur de rations", page_icon="🐾", layout="centered")
@@ -387,15 +388,41 @@ elif page == "ration":
         else:
             st.subheader("Verification d'un aliment industriel")
             st.caption("Renseigne les valeurs de l'etiquette (analyse moyenne, sur matiere telle quelle)")
+            with st.container(border=True):
+                st.markdown("#### 📷 Scanner un produit")
+                photo = st.camera_input("Prends une photo du code-barres")
+                if photo is not None:
+                    st.image(photo, caption="Lis les chiffres du code-barres ci-dessus", width=300)
 
+                code_barre = st.text_input("Code-barres (saisis les chiffres lus sur la photo)")
+
+                if st.button("Rechercher le produit"):
+                    if code_barre:
+                        produit = rechercher_produit(code_barre)
+                        if produit is not None:
+                            st.session_state["produit_scan"] = produit
+                            st.success(f"Produit trouve : {produit['nom']}")
+                        else:
+                            st.session_state["produit_scan"] = None
+                            st.warning("Produit non trouve dans la base Open Pet Food Facts. Renseigne les valeurs manuellement ci-dessous.")
+                    else:
+                        st.warning("Merci de saisir un code-barres.")
+
+            produit_scan = st.session_state.get("produit_scan")
+            valeur_pb = produit_scan["pb"] if produit_scan and produit_scan.get("pb") is not None else 25.0
+            valeur_mg = produit_scan["mg"] if produit_scan and produit_scan.get("mg") is not None else 12.0
+            valeur_cb = produit_scan["cb"] if produit_scan and produit_scan.get("cb") is not None else 3.0
+            valeur_mm = produit_scan["mm"] if produit_scan and produit_scan.get("mm") is not None else 7.0
+            valeur_eau = produit_scan["eau"] if produit_scan and produit_scan.get("eau") is not None else 10.0
+            
             col_x, col_y, col_z = st.columns(3)
-            pb_aliment = col_x.number_input("Proteines brutes (%)", min_value=0.0, max_value=100.0, value=25.0, step=0.1)
-            mg_aliment = col_y.number_input("Matieres grasses (%)", min_value=0.0, max_value=100.0, value=12.0, step=0.1)
-            cb_aliment = col_z.number_input("Cellulose brute / fibres (%)", min_value=0.0, max_value=100.0, value=3.0, step=0.1)
+            pb_aliment = col_x.number_input("Proteines brutes (%)", min_value=0.0, max_value=100.0, value=float(valeur_pb), step=0.1)
+            mg_aliment = col_y.number_input("Matieres grasses (%)", min_value=0.0, max_value=100.0, value=float(valeur_mg), step=0.1)
+            cb_aliment = col_z.number_input("Cellulose brute / fibres (%)", min_value=0.0, max_value=100.0, value=float(valeur_cb), step=0.1)
 
             col_x2, col_y2 = st.columns(2)
-            mm_aliment = col_x2.number_input("Matieres minerales / cendres (%)", min_value=0.0, max_value=100.0, value=7.0, step=0.1)
-            eau_aliment = col_y2.number_input("Humidite / eau (%)", min_value=0.0, max_value=100.0, value=10.0, step=0.1)
+            mm_aliment = col_x2.number_input("Matieres minerales / cendres (%)", min_value=0.0, max_value=100.0, value=float(valeur_mm), step=0.1)
+            eau_aliment = col_y2.number_input("Humidite / eau (%)", min_value=0.0, max_value=100.0, value=float(valeur_eau), step=0.1)
 
             if st.button("Analyser l'aliment"):
                 em, ena = calculer_em_aliment(pb_aliment, mg_aliment, cb_aliment, mm_aliment, eau_aliment, espece=espece)
